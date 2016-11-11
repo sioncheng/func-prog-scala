@@ -42,20 +42,21 @@ object List {
 		dropWhileInner(Nil, l, f)
 	}
 
-	def foldRight[A, B](as: List[A], z: B)(f: (A, B) => B): B = as match {
+	def foldLeft[A, B](as: List[A], z: B)(f: (B, A) => B): B = as match {
 		case Nil => z
-		case Cons(x, xs) => f(x, foldRight(xs, z)(f))
+		case Cons(x, xs) => foldLeft(xs, f(z, x))(f)
 	}
 
-	/*def foldRightInner[A, B](as: List[A], z: B)(f: (A, B) => B)(acc: B) = as match {
-		case Nil => acc
-		case Cons(x, xs) => 
-	}*/
+	def reverse[A](as: List[A]): List[A] = as match {
+		case Nil => Nil
+		case Cons(x, xs) => foldLeft(xs, List(x))((b,a) => append(List(a), b))
+	}
 
-def foldLeft[A, B](as: List[A], z: B)(f: (A, B) => B): B = ???
+	def foldRight[A, B](as: List[A], z: B)(f: (A, B) => B): B = List.foldLeft(List.reverse(as), z)((x,y) => f(y,x))
 
-	def foldSum(ns: List[Int]) = foldRight(ns, 0)((x,y) => x + y)
-	def foldProduct(ns: List[Double]) = foldRight(ns, 1.0)(_ * _)
+	def foldSum(ns: List[Int]) = foldLeft(ns, 0)((x,y) => x + y)
+	def foldProduct(ns: List[Double]) = foldLeft(ns, 1.0)(_ * _)
+	def length[A](ns: List[A]):Int = foldLeft(ns, 0)((x,y) => x + 1)
 }
 
 object ListMain extends App {
@@ -66,6 +67,7 @@ object ListMain extends App {
 	val ex4: List[String] = List("a", "b", "c")
 	val ex5: List[String] = List.setHead("aa", ex4)
 	val ex6: List[String] = List.dropWhile(ex5)(x => "b" == x)
+	var ex7: List[Int] = Cons(1,Cons(2,Cons(3,Cons(4,Nil))))
 
 	println(ex1)
 	println(ex2)
@@ -75,4 +77,10 @@ object ListMain extends App {
 	println(ex6)
 	println(List.foldProduct(ex1))
 	println(List.foldSum(ex2))
+	println(List.length(ex1))
+	println(List.length(ex2))
+	println(List.length(ex3))
+	println(List.reverse(ex3))
+	println(List.foldLeft(ex7,1)(_ - _))
+	println(List.foldRight(ex7,1)(_ - _))
 }

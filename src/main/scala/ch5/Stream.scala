@@ -68,7 +68,37 @@ sealed trait Stream[+A] {
 
         dropWhileInner(this)(p)(Empty)
     }
+
+    def foldRight[B](z: => B)(f: (A, =>B) => B): B = this match {
+        case Cons(h, t) => f(h(), t().foldRight(z)(f))
+        case _ => z
+    }
+
+    def exists(p: A => Boolean): Boolean = foldRight(false)((a, b) => p(a) || b)
+
+    def forAll(p: A => Boolean): Boolean = foldRight(true)((a, b) => p(a) && b)
+
+    def map[B](f: A => B): Stream[B] =
+        foldRight(Stream.empty[B])( (h, t) => Stream.cons(f(h), t) )
+
+    def filter(f: A => Boolean): Stream[A] =
+        foldRight(Stream.empty[A])( (h, t) => if (f(h)) Stream.cons(h,t) else t)
+
+    def append[B >: A](s: => Stream[B]): Stream[B] =
+        foldRight(s)((h,t) => Stream.cons(h, t))
+
+    def flatMap[B](f: A => Stream[B]): Stream[B] =
+        foldRight(Stream.empty[B])((h,t) => f(h) append t)
+
+    def tails: Stream[Stream[A]] = {
+        Stream.unfold(this)(s => s match {
+            case Empty => None
+            case s => Some((s, s drop 1))
+        }).append(Stream(Stream.empty))
+    }
+
 }
+
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
@@ -85,6 +115,32 @@ object Stream {
     def apply[A](as: A*) : Stream[A] = {
         if (as.isEmpty) empty else cons(as.head, apply(as.tail: _*))
     }
+
+    def constant[A](a: A): Stream[A] = {
+        lazy val tail: Stream[A] = Cons(() => a, () => tail)
+        tail
+    }
+
+    val ones:Stream[Int] = constant(1)
+
+    def from(n: Int): Stream[Int] = cons(n, from(n+1))
+
+    val fibs: Stream[Int] = {
+        def fibsInner(a: Int, b: Int): Stream[Int] = {
+            Stream.cons(a, fibsInner(b, a+b))
+        }
+
+        fibsInner(0,1)
+    }
+
+    def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = {
+        f(z) match {
+            case Some((h,s)) => cons(h, unfold(s)(f))
+            case None => empty
+        }
+    }
+
+    def fromViaUnfold(n: Int): Stream[Int] = unfold(n)(n => Some(n, n + 1))
 }
 
 
@@ -113,4 +169,37 @@ object StreamMain extends App {
     println(st.dropWhile(_ % 1 == 0).toList())
     println(st.dropWhile(_ > 10).toList())
     println(st.dropWhile(_ < 10).toList())
+
+    println("exists")
+    println(st.exists(_ == 3))
+    println(st.exists(_ > 4))
+
+    println("forAll")
+    println(st.forAll( _ > 0))
+    println(st.forAll( _ > 10))
+
+    println("map")
+    println(st.map(_ * 2).toList())
+
+    println("filter")
+    println(st.filter(_ % 2 == 0).toList())
+
+    println("append")
+    val st2 = Stream(5,6,7)
+    println(st.append(st2).toList())
+
+    println("constant")
+    println(Stream.ones.take(10))
+
+    println("from")
+    println(Stream.from(10).take(5))
+
+    println("fibs")
+    println(Stream.fibs.take(10))
+
+    println("fromViaUnfold")
+    println(Stream.fromViaUnfold(10).take(5))
+
+    println("tails")
+    println(st.tails.toList())
 }

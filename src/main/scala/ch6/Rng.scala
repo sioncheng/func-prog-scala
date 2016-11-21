@@ -48,10 +48,18 @@ object RNG {
         (rng: RNG) => {
             val s:Rand[Int] = (x:RNG) => {x.positiveInt}
             val f = (x: Int) => if (x < n) x else x % n
-            RNG.map(s)(f)(rng)
+            //RNG.map(s)(f)(rng)
+            RNG.map(_.positiveInt)(f)(rng)
         }
     }
 
+    def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A,B) => C): Rand[C] = {
+        (rng: RNG) => {
+            val (a, _) = ra(rng)
+            val (b, rng3) = rb(rng)
+            (f(a,b), rng3)
+        }
+    }
 
 }
 
@@ -100,4 +108,10 @@ object RngMain extends App {
     println(max(rng8)._1)
     println(max(rng2)._1)
     println(max(rng2)._1)
+
+    println("map2")
+    val map2f = RNG.map2[Int, Int, Int](RNG.int, RNG.int)((x,y) => x + y)
+    val (m21, _) = map2f(rng8)
+    val (m22, _) = map2f(rng8)
+    println(m21, m22)
 }

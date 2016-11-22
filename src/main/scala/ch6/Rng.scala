@@ -46,7 +46,7 @@ object RNG {
 
     def positiveMax(n: Int): Rand[Int] = {
         (rng: RNG) => {
-            val s:Rand[Int] = (x:RNG) => {x.positiveInt}
+            //val s:Rand[Int] = (x:RNG) => {x.positiveInt}
             val f = (x: Int) => if (x < n) x else x % n
             //RNG.map(s)(f)(rng)
             RNG.map(_.positiveInt)(f)(rng)
@@ -61,6 +61,32 @@ object RNG {
         }
     }
 
+    def nonNegative: Rand[Int] =
+        rng => {
+            val (a, rng2) = rng.nextInt
+            if (a < 0) {
+                (-1 * a, rng2)
+            } else {
+                (a, rng2)
+            }
+        }
+
+    def nonNegativeLessThan(n: Int): Rand[Int] = RNG.map(RNG.nonNegative){_ % n}
+
+    def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
+        rng => {
+            val (a, r1) = f(rng)
+            g(a)(r1) // We pass the new state along
+        }
+
+    def _nonNegativeLessThan(n: Int): Rand[Int] = {
+        val g = (i: Int) => {
+            val mod = i % n
+            if (mod < n) RNG.unit(mod) else RNG._nonNegativeLessThan(n)
+        }
+
+        RNG.flatMap(RNG.nonNegative)(g)
+    }
 }
 
 
@@ -114,4 +140,10 @@ object RngMain extends App {
     val (m21, _) = map2f(rng8)
     val (m22, _) = map2f(rng8)
     println(m21, m22)
+
+    println("nonNegativeLessThan 10")
+    println(RNG.nonNegativeLessThan(10)(rng8))
+
+    println("_nonNegativeLessThan 10")
+    println(RNG.nonNegativeLessThan(10)(rng8))
 }

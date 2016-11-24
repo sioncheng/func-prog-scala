@@ -23,7 +23,11 @@ object Nonblocking {
 
         p(es)/*.apply*/((a: A) => {
             println("p(es).apply begin");
-            ref.set(a);
+            try {
+                ref.set(a);
+            } catch {
+                case e: Exception => println("run exception", e)
+            }
             latch.countDown;
             println("p(es).apply end");
         })

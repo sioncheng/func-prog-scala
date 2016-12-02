@@ -71,6 +71,8 @@ object RNG {
             }
         }
 
+    def nonNegativeInt = nonNegative
+
     def nonNegativeLessThan(n: Int): Rand[Int] = RNG.map(RNG.nonNegative){_ % n}
 
     def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
@@ -86,6 +88,14 @@ object RNG {
         }
 
         RNG.flatMap(RNG.nonNegative)(g)
+    }
+
+    def boolean(rng: RNG): (Boolean, RNG) =
+        rng.nextInt match { case (i,rng2) => (i%2==0,rng2) }
+
+    def double(rng: RNG): (Double, RNG) = {
+        val (i,r) = rng.nextInt
+        (i / 1000000.0, r)
     }
 }
 

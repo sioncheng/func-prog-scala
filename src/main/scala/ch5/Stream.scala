@@ -97,6 +97,16 @@ sealed trait Stream[+A] {
         }).append(Stream(Stream.empty))
     }
 
+    def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] =
+        Stream.unfold((this, s2))(ss => ss match {
+            case (Cons(h1, t1), Cons(h2, t2)) => Some((f(h1(), h2()), (t1(), t2())))
+            case _ => None
+        })
+
+    // special case of `zipWith`
+    def zip[B](s2: Stream[B]): Stream[(A,B)] =
+        zipWith(s2)((_,_))
+
 }
 
 case object Empty extends Stream[Nothing]
@@ -185,7 +195,7 @@ object StreamMain extends App {
     println(st.filter(_ % 2 == 0).toList())
 
     println("append")
-    val st2 = Stream(5,6,7)
+    val st2 = Stream(5,6,7,8)
     println(st.append(st2).toList())
 
     println("constant")
@@ -202,4 +212,19 @@ object StreamMain extends App {
 
     println("tails")
     println(st.tails.toList())
+
+    println("unfold")
+    val f  :   Int => Option[(Int, Int)]  = x => {
+        if (x % 2 == 1) {
+            val y = x % 2
+            val z = x - y * 2
+            Some(x, z)
+        } else {
+            None
+        }
+    }
+    println(Stream.unfold(13)(f).toList())
+
+    println("zip")
+    println(st.zip(st2).toList())
 }

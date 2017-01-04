@@ -3,6 +3,7 @@ package ch8
 import ch6.RNG
 import ch6.State
 import ch8.Prop.{Result, TestCases}
+import ch5.Stream
 
 /**
   * Created by cyq on 28/11/2016.
@@ -50,10 +51,43 @@ object Prop {
     type TestCases = Int
     type FailedCase = String
     type SuccessCount = Int
-    type Result = Option[(FailedCase, SuccessCount)]
+
+    sealed trait Result {
+        def isFalsified: Boolean
+    }
+
+    case object Passed extends Result {
+        override def isFalsified: Boolean = false
+    }
+
+    case class Falsified (failure: FailedCase,
+                          successCount: SuccessCount) extends Result {
+        override def isFalsified: Boolean = true
+    }
+
+
+    def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
+        Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
+
+    def buildMsg[A](s: A, e: Exception): String = {
+        s"test case: $s \n" +
+        s"generated an exception: ${e.getMessage} \n" +
+        s"stack trace:\n, ${e.getStackTrace.mkString("\n")}"
+    }
+
+    def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
+        (n, rng) => randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
+            case (a, i) => try {
+                if (f(a)) Passed else Falsified(a.toString, i)
+            } catch {
+                case e: Exception => Falsified(buildMsg(a, e), i)
+            }
+        }.find(_.isFalsified).getOrElse(Passed)
+    }
+
 }
 
-case class Prop(run: TestCases => Result)
+case class Prop(run: (TestCases, RNG) => Result)
 
 
 object PropMain extends App {
@@ -67,4 +101,5 @@ object PropMain extends App {
     val gen2 = Gen.choose(100,200)
     println(Gen.union(gen,gen2).sample.run(rng)._1)
     println(Gen.weighted((gen, 0.01),(gen2,0.00324)).sample.run(rng)._1)
+    println(Prop.forAll(gen2)( (x: Int) => {println(s"x: $x"); x >= 100 && x < 200;}).run(10, rng))
 }

@@ -21,8 +21,50 @@ object MyModule {
 		msg.format(name, n, f(n))
 	}
 
+	def fib(n: Int): Int = {
+
+        /*
+        def fibRec(n: Int): Int = {
+
+            if (n <= 1) {
+                0
+            } else {
+                if (n == 2) {
+                    1
+                } else {
+                    fib(n - 1) + fib(n - 2)
+                }
+            }
+        }
+
+        fibRec(n)
+        */
+
+        def fibTailRec(n: Int, acc1: Int, acc2: Int, flag: Int): Int = {
+
+            if (n <= 2) {
+                if (n == 2) {
+                    1
+                } else {
+                   0
+                }
+            } else {
+                if (n == flag) {
+                    acc1 + acc2
+                } else {
+                    fibTailRec(n, acc2, acc1 + acc2, flag + 1)
+                }
+            }
+        }
+
+        fibTailRec(n, 0, 1, 3)
+    }
+
 	def main(args: Array[String]): Unit = {
 		println(formatResult("absolute value", -34, abs))
 		println(formatResult("factorial", -34, abs))
+        for (n <- 1 to 10) {
+            println(fib(n))
+        }
 	}
 }

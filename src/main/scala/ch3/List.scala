@@ -57,6 +57,21 @@ object List {
 	def foldSum(ns: List[Int]) = foldLeft(ns, 0)((x,y) => x + y)
 	def foldProduct(ns: List[Double]) = foldLeft(ns, 1.0)(_ * _)
 	def length[A](ns: List[A]):Int = foldLeft(ns, 0)((x,y) => x + 1)
+
+	def tail[A](as: List[A]): List[A] = {
+        drop(as, 1)
+    }
+
+    def drop[A](as: List[A], n: Int): List[A] = {
+        if (n <= 0) {
+            as
+        } else {
+            as match {
+                case Nil => Nil
+                case Cons(_, xs) => drop(xs, n-1)
+            }
+        }
+    }
 }
 
 object ListMain extends App {
@@ -83,4 +98,6 @@ object ListMain extends App {
 	println(List.reverse(ex3))
 	println(List.foldLeft(ex7,1)(_ - _))
 	println(List.foldRight(ex7,1)(_ - _))
+    println(List.tail(ex7))
+    println(List.drop(ex7,1))
 }

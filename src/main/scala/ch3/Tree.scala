@@ -5,6 +5,7 @@ case class Leaf[A](value: A) extends Tree[A]
 case class Branch[A](left:Tree[A], right:Tree[A]) extends Tree[A]
 
 object Tree {
+
     def size[A](t: Tree[A]): Int = {
 
         def go(acc: Int): Int = {
@@ -83,6 +84,38 @@ object Tree {
 
         go(t)
     }
+
+    def fold[A, B](t: Tree[A], init: B, f: Tree[A] => B, g: (B,B) => B) = {
+
+        def go(tt:  Tree[A], acc: B): B = {
+            tt match {
+                case Branch(l, r) => g(acc, g(f(l), f(r)))
+                case x => g(acc, f(x))
+            }
+        }
+
+        go(t, init)
+    }
+
+    def mapByFold[A, B](t: Tree[A], f: A => B): Tree[B] = {
+        val init = null
+        def ff (a: Tree[A]): Tree[B] = {
+            a match {
+                case Branch(l, r) => {
+                    Branch(ff(l),ff(r))
+                }
+                case Leaf(x) => Leaf(f(x))
+            }
+        }
+        val gg: (Tree[B], Tree[B]) => Tree[B] = (x,y) =>  {
+            x match {
+                case null => y
+                case _ => Branch(x,y)
+            }
+        }
+
+        fold(t, init, ff, gg)
+    }
 }
 
 object TreeMain extends App {
@@ -95,4 +128,7 @@ object TreeMain extends App {
 
     val tree2 = Tree.map[Int, Double](tree, (x: Int) => x * 1.0)
     println(tree2)
+
+    val tree3 = Tree.mapByFold[Int, Double](tree, (x: Int) => x * 1.0)
+    println(tree3)
 }
